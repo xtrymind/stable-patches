@@ -19,7 +19,10 @@ function die() {
 }
 
 APPROVED_CONFLICTS=( "arch/arm64/include/asm/pgtable.h:1"
+                     "arch/arm64/mm/dma-mapping.c:1"
                      "drivers/scsi/ufs/ufshcd.c:2"
+                     "fs/f2fs/file.c:1"
+                     "fs/f2fs/gc.c:1"
                      "fs/f2fs/segment.c:1" )
 readarray -t CONFLICTS <<< "$(git cf)"
 if [[ -n "${CONFLICTS[*]}" ]]; then

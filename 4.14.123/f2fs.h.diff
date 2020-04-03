@@ -1,13 +1,13 @@
 diff --git a/fs/f2fs/f2fs.h b/fs/f2fs/f2fs.h
-index b5f56f48dff6..31a02a2c8cf4 100644
+index 4e696b65ed9b..91e1db24509f 100644
 --- a/fs/f2fs/f2fs.h
 +++ b/fs/f2fs/f2fs.h
-@@ -3341,7 +3341,7 @@ static inline bool f2fs_force_buffered_io(struct inode *inode, int rw)
- 	return ((f2fs_encrypted_file(inode) &&
- 		!fscrypt_using_hardware_encryption(inode)) ||
- 			(rw == WRITE && test_opt(F2FS_I_SB(inode), LFS)) ||
--			F2FS_I_SB(inode)->s_ndevs);
-+			f2fs_is_multi_device(F2FS_I_SB(inode)));
- }
- 
- static inline bool f2fs_may_encrypt_bio(struct inode *inode,
+@@ -3623,7 +3623,7 @@ static inline bool f2fs_force_buffered_io(struct inode *inode,
+ 	if (f2fs_encrypted_file(inode) &&
+ 	    !fscrypt_using_hardware_encryption(inode))
+ 		return true;
+-	if (sbi->s_ndevs)
++	if (f2fs_is_multi_device(sbi))
+ 		return true;
+ 	/*
+ 	 * for blkzoned device, fallback direct IO to buffered IO, so
