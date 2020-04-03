@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index e23f07af3654..8ed56728733c 100644
+index ef3a58ca7ccd..3e09639430c5 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -437,6 +437,7 @@ KBUILD_AFLAGS_MODULE  := -DMODULE
@@ -16,6 +16,6 @@ index e23f07af3654..8ed56728733c 100644
  CLANG_TRIPLE	?= $(CROSS_COMPILE)
 -CLANG_FLAGS	:= --target=$(notdir $(CLANG_TRIPLE:%-=%))
 +CLANG_FLAGS	+= --target=$(notdir $(CLANG_TRIPLE:%-=%))
- GCC_TOOLCHAIN_DIR := $(dir $(shell which $(CROSS_COMPILE)elfedit))
- CLANG_FLAGS	+= --prefix=$(GCC_TOOLCHAIN_DIR)
- GCC_TOOLCHAIN	:= $(realpath $(GCC_TOOLCHAIN_DIR)/..)
+ ifeq ($(shell $(srctree)/scripts/clang-android.sh $(CC) $(CLANG_FLAGS)), y)
+ $(error "Clang with Android --target detected. Did you specify CLANG_TRIPLE?")
+ endif
