@@ -49,7 +49,7 @@ if [[ -n "${CONFLICTS[*]}" ]]; then
     [[ -n "$(git cf)" ]] && die "Resetting conflicts failed!"
 
     header "Applying all patches"
-    git fp -1 --stdout f7daefe4231e57381d92c2e2ad905a899c28e402 | git ap || exit 1
+    git ap "${PATCHES_FOLDER}"/*.diff || exit 1
 
     header "Committing merge"
     git fm || exit 1
