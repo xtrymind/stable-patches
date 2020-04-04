@@ -62,7 +62,7 @@ if [[ -n "${CONFLICTS[*]}" ]]; then
     git rf "Documentation"
     header "Applying all patches"
     case "$(git cb)" in
-        "kernel.lnx.4.14.r4-rel") AND_VER=10 ;;
+        "kernel.lnx.4.14.r11-rel") AND_VER=10 ;;
         *) AND_VER=pie ;;
     esac
     git ap "${PATCHES_FOLDER}"/arm64-android-${AND_VER}.series || exit 1

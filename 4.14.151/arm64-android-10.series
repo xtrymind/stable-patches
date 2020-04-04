@@ -5236,19 +5236,6 @@ Signed-off-by: Nathan Chancellor <natechancellor@gmail.com>
  arch/arm64/kernel/ssbd.c           | 5 +++--
  4 files changed, 7 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm64/include/asm/processor.h b/arch/arm64/include/asm/processor.h
-index 8455decedd9f..2aa8c3348e9b 100644
---- a/arch/arm64/include/asm/processor.h
-+++ b/arch/arm64/include/asm/processor.h
-@@ -177,7 +177,7 @@ static inline void compat_start_thread(struct pt_regs *regs, unsigned long pc,
- #endif
- 
- 	if (arm64_get_ssbd_state() != ARM64_SSBD_FORCE_ENABLE)
--		regs->pstate |= COMPAT_PSR_SSBS_BIT;
-+		regs->pstate |= PSR_AA32_SSBS_BIT;
- 
- 	regs->compat_sp = sp;
- }
 diff --git a/arch/arm64/include/asm/ptrace.h b/arch/arm64/include/asm/ptrace.h
 index f593a22d52dc..96b423a246ba 100644
 --- a/arch/arm64/include/asm/ptrace.h
@@ -6488,10 +6475,10 @@ index 437ce0b34283..03e07ea0ede6 100644
 2.24.0.rc1
 
 
-From e4d2fa62dc810b795b02be6ae2f2b42646acab53 Mon Sep 17 00:00:00 2001
+From d00b11e99c5adb5219f549edb15be3848b4caa0e Mon Sep 17 00:00:00 2001
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Thu, 24 Oct 2019 14:48:31 +0200
-Subject: [PATCH 45/47] arm64: Force SSBS on context switch
+Subject: [PATCH] arm64: Force SSBS on context switch
 
 [ Upstream commit cbdf8a189a66001c36007bf0f5c975d0376c5c3a ]
 
@@ -6508,107 +6495,26 @@ Signed-off-by: Will Deacon <will@kernel.org>
 Signed-off-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Signed-off-by: Nathan Chancellor <natechancellor@gmail.com>
+Signed-off-by: Dede Dindin Qudsy <xtrymind@gmail.com>
 ---
- arch/arm64/include/asm/processor.h | 14 ++++++++++++--
- arch/arm64/kernel/process.c        | 29 ++++++++++++++++++++++++++++-
- 2 files changed, 40 insertions(+), 3 deletions(-)
+ arch/arm64/include/asm/processor.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/arch/arm64/include/asm/processor.h b/arch/arm64/include/asm/processor.h
-index 2aa8c3348e9b..8eabde5f2f1c 100644
+index ff9fb9174d20..eed9cf104117 100644
 --- a/arch/arm64/include/asm/processor.h
 +++ b/arch/arm64/include/asm/processor.h
-@@ -151,6 +151,16 @@ static inline void start_thread_common(struct pt_regs *regs, unsigned long pc)
- 	regs->pc = pc;
- }
+@@ -157,7 +157,7 @@ static inline void set_ssbs_bit(struct pt_regs *regs)
  
-+static inline void set_ssbs_bit(struct pt_regs *regs)
-+{
-+	regs->pstate |= PSR_SSBS_BIT;
-+}
-+
-+static inline void set_compat_ssbs_bit(struct pt_regs *regs)
-+{
-+	regs->pstate |= PSR_AA32_SSBS_BIT;
-+}
-+
- static inline void start_thread(struct pt_regs *regs, unsigned long pc,
- 				unsigned long sp)
+ static inline void set_compat_ssbs_bit(struct pt_regs *regs)
  {
-@@ -158,7 +168,7 @@ static inline void start_thread(struct pt_regs *regs, unsigned long pc,
- 	regs->pstate = PSR_MODE_EL0t;
- 
- 	if (arm64_get_ssbd_state() != ARM64_SSBD_FORCE_ENABLE)
--		regs->pstate |= PSR_SSBS_BIT;
-+		set_ssbs_bit(regs);
- 
- 	regs->sp = sp;
- }
-@@ -177,7 +187,7 @@ static inline void compat_start_thread(struct pt_regs *regs, unsigned long pc,
- #endif
- 
- 	if (arm64_get_ssbd_state() != ARM64_SSBD_FORCE_ENABLE)
--		regs->pstate |= PSR_AA32_SSBS_BIT;
-+		set_compat_ssbs_bit(regs);
- 
- 	regs->compat_sp = sp;
- }
-diff --git a/arch/arm64/kernel/process.c b/arch/arm64/kernel/process.c
-index 6f3258a9d0eb..8c8ab812e2ea 100644
---- a/arch/arm64/kernel/process.c
-+++ b/arch/arm64/kernel/process.c
-@@ -367,7 +367,7 @@ int copy_thread(unsigned long clone_flags, unsigned long stack_start,
- 			childregs->pstate |= PSR_UAO_BIT;
- 
- 		if (arm64_get_ssbd_state() == ARM64_SSBD_FORCE_DISABLE)
--			childregs->pstate |= PSR_SSBS_BIT;
-+			set_ssbs_bit(childregs);
- 
- 		p->thread.cpu_context.x19 = stack_start;
- 		p->thread.cpu_context.x20 = stk_sz;
-@@ -408,6 +408,32 @@ void uao_thread_switch(struct task_struct *next)
- 	}
+-	regs->pstate |= COMPAT_PSR_SSBS_BIT;
++	regs->pstate |= PSR_AA32_SSBS_BIT;
  }
  
-+/*
-+ * Force SSBS state on context-switch, since it may be lost after migrating
-+ * from a CPU which treats the bit as RES0 in a heterogeneous system.
-+ */
-+static void ssbs_thread_switch(struct task_struct *next)
-+{
-+	struct pt_regs *regs = task_pt_regs(next);
-+
-+	/*
-+	 * Nothing to do for kernel threads, but 'regs' may be junk
-+	 * (e.g. idle task) so check the flags and bail early.
-+	 */
-+	if (unlikely(next->flags & PF_KTHREAD))
-+		return;
-+
-+	/* If the mitigation is enabled, then we leave SSBS clear. */
-+	if ((arm64_get_ssbd_state() == ARM64_SSBD_FORCE_ENABLE) ||
-+	    test_tsk_thread_flag(next, TIF_SSBD))
-+		return;
-+
-+	if (compat_user_mode(regs))
-+		set_compat_ssbs_bit(regs);
-+	else if (user_mode(regs))
-+		set_ssbs_bit(regs);
-+}
-+
- /*
-  * We store our current task in sp_el0, which is clobbered by userspace. Keep a
-  * shadow copy so that we can restore this upon entry from userspace.
-@@ -436,6 +462,7 @@ __notrace_funcgraph struct task_struct *__switch_to(struct task_struct *prev,
- 	contextidr_thread_switch(next);
- 	entry_task_switch(next);
- 	uao_thread_switch(next);
-+	ssbs_thread_switch(next);
- 
- 	/*
- 	 * Complete any pending TLB or cache maintenance on this CPU in case
+ static inline void start_thread(struct pt_regs *regs, unsigned long pc,
 -- 
-2.24.0.rc1
-
+2.26.0
 
 From 8c9a8c551847dbd20178f9de6fd03c5263924e4f Mon Sep 17 00:00:00 2001
 From: Marc Zyngier <marc.zyngier@arm.com>
@@ -6815,4 +6721,3 @@ index a6e966005fc0..3dcd06758380 100644
  		return false;
 -- 
 2.24.0.rc1
-
