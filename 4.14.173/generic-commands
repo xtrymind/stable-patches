@@ -53,6 +53,7 @@ if [[ -n "${CONFLICTS[*]}" ]]; then
     case $(git cb) in
         *14.r1|*14.r3-rel) PNUM=1 ;;
         *14.r4-rel|*14.r7-rel) PNUM=2 ;;
+        *14.r11-rel) PNUM=3 ;;
         *) die "Patch file not handled" ;;
     esac
     git ap "${PATCHES_FOLDER}"/{"${PNUM}"-f_fs.c.diff,msm_drv.c.diff} || exit 1
