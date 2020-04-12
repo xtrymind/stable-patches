@@ -20,6 +20,7 @@ function die() {
 
 APPROVED_CONFLICTS=( "include/uapi/linux/coresight-stm.h:1"
                      "drivers/usb/dwc3/gadget.c:1"
+                     "drivers/net/phy/micrel.c:1"
                      "drivers/gpu/drm/msm/msm_gem.c:1"
                      "drivers/clk/qcom/clk-rcg2.c:1" )
 readarray -t CONFLICTS <<< "$(git cf)"
@@ -49,6 +50,8 @@ if [[ -n "${CONFLICTS[*]}" ]]; then
         fi
     done
     [[ -n "$(git cf)" ]] && die "Resetting conflicts failed!"
+    git ap "${PATCHES_FOLDER}"/gadget.c.diff || exit ${?}
+    [[ "$(git cb)" =~ r11-rel ]] && { git ap "${PATCHES_FOLDER}"/micrel.c.diff || exit ${?}; }
 
     header "Committing merge"
     git fm || exit 1
