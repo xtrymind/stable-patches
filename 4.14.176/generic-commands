@@ -51,7 +51,7 @@ if [[ -n "${CONFLICTS[*]}" ]]; then
         fi
     done
     [[ -n "$(git cf)" ]] && die "Resetting conflicts failed!"
-    git ap "${PATCHES_FOLDER}"/{gadget.c.diff,msm_gem.c.diff} || exit ${?}
+    git ap "${PATCHES_FOLDER}"/{gadget,msm_gem,glink_smem}.c.diff || exit ${?}
     [[ "$(git cb)" =~ r11-rel ]] && { git ap "${PATCHES_FOLDER}"/micrel.c.diff || exit ${?}; }
 
     header "Committing merge"
